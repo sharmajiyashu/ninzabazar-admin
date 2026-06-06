@@ -1,0 +1,574 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Address {
+  id              String         @id
+  street          String
+  city            String
+  state           String
+  postalCode      String
+  country         String
+  isDefault       Boolean        @default(false)
+  buyerProfileId  String?
+  sellerProfileId String?        @unique
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime
+  label           String         @default("Other")
+  BuyerProfile    BuyerProfile?  @relation(fields: [buyerProfileId], references: [id])
+  SellerProfile   SellerProfile? @relation(fields: [sellerProfileId], references: [id])
+  Order           Order[]
+
+  @@index([buyerProfileId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Admin {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  password  String
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model BuyerProfile {
+  id             String     @id
+  userId         String     @unique
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime
+  emailVerified  Boolean    @default(false)
+  profilePicture String?
+  Address        Address[]
+  User           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Cart           Cart?
+  CartItem       CartItem[]
+  Order          Order[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Conversation {
+  id                               String    @id
+  buyerId                          String
+  sellerId                         String
+  productId                        String?
+  createdAt                        DateTime  @default(now())
+  updatedAt                        DateTime
+  User_Conversation_buyerIdToUser  User      @relation("Conversation_buyerIdToUser", fields: [buyerId], references: [id])
+  Product                          Product?  @relation(fields: [productId], references: [id])
+  User_Conversation_sellerIdToUser User      @relation("Conversation_sellerIdToUser", fields: [sellerId], references: [id])
+  Message                          Message[]
+
+  @@index([buyerId])
+  @@index([createdAt])
+  @@index([productId])
+  @@index([sellerId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Message {
+  id                String              @id
+  conversationId    String
+  senderId          String
+  content           String?
+  messageType       MessageType         @default(TEXT)
+  sentAt            DateTime            @default(now())
+  updatedAt         DateTime
+  Conversation      Conversation        @relation(fields: [conversationId], references: [id])
+  User              User                @relation(fields: [senderId], references: [id])
+  MessageAttachment MessageAttachment[]
+  MessageStatus     MessageStatus[]
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([sentAt])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model MessageAttachment {
+  id         String   @id
+  messageId  String
+  fileUrl    String
+  fileType   FileType
+  uploadedAt DateTime @default(now())
+  Message    Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([fileType])
+  @@index([messageId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model MessageStatus {
+  id        String     @id
+  messageId String
+  userId    String
+  status    StatusType @default(SENT)
+  updatedAt DateTime
+  Message   Message    @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  User      User       @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@index([status])
+  @@index([userId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model OAuthAccount {
+  id                String        @id
+  provider          OAuthProvider
+  providerAccountId String
+  userId            String
+  accessToken       String?
+  refreshToken      String?
+  expiresAt         DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime
+  idToken           String?
+  User              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Order {
+  id                 String         @id
+  status             String
+  totalAmount        Decimal        @db.Decimal(10, 2)
+  buyerId            String
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime
+  cancellationReason String?
+  deliveryVerifiedAt DateTime?
+  isPaymentReleased  Boolean        @default(false)
+  paymentId          String?
+  razorpayOrderId    String?
+  shippingAddressId  String?
+  trackingLink       String         @default("")
+  EscrowPayment      EscrowPayment?
+  BuyerProfile       BuyerProfile   @relation(fields: [buyerId], references: [id])
+  Address            Address?       @relation(fields: [shippingAddressId], references: [id])
+  OrderItem          OrderItem[]
+
+  @@index([buyerId])
+  @@index([createdAt])
+  @@index([status])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model OrderItem {
+  id                  String          @id
+  quantity            Int
+  priceAtPurchase     Decimal         @db.Decimal(10, 2)
+  orderId             String
+  variantId           String?
+  productName         String
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime
+  productId           String
+  sellerId            String?
+  shippingMethodName  String?
+  shippingMethodPrice Float           @default(0)
+  variantCombination  String[]
+  Order               Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  Product             Product         @relation(fields: [productId], references: [id])
+  SellerProfile       SellerProfile?  @relation(fields: [sellerId], references: [id])
+  ProductVariant      ProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([variantId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model PickupAddress {
+  id              String         @id
+  street          String
+  city            String
+  state           String
+  postalCode      String
+  country         String
+  isDefault       Boolean        @default(false)
+  sellerProfileId String?        @unique
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime
+  SellerProfile   SellerProfile? @relation(fields: [sellerProfileId], references: [id])
+
+  @@index([sellerProfileId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Product {
+  id             String           @id
+  name           String
+  description    String
+  sellerId       String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime
+  basePrice      Decimal          @db.Decimal(10, 2)
+  isSale         Boolean          @default(false)
+  salePrice      Decimal?         @db.Decimal(10, 2)
+  adminApproved  Boolean          @default(false)
+  isActive       Boolean          @default(false)
+  keywords       String[]
+  status         String           @default("pending")
+  totalPurchases Int              @default(0)
+  category       String?
+  CartItem       CartItem[]
+  Conversation   Conversation[]
+  OrderItem      OrderItem[]
+  SellerProfile  SellerProfile    @relation(fields: [sellerId], references: [id])
+  ProductImage   ProductImage[]
+  ProductVariant ProductVariant[]
+  Review         Review[]
+  ShippingMethod ShippingMethod[]
+
+  @@index([name])
+  @@index([sellerId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ProductImage {
+  id        String   @id
+  alt       String?
+  isDefault Boolean  @default(false)
+  productId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  urlpath   String
+  Product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ProductVariant {
+  id                  String                @id
+  title               String
+  option              String
+  price               Decimal               @db.Decimal(10, 2)
+  sku                 String?
+  productId           String
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime
+  hasPrice            Boolean               @default(false)
+  OrderItem           OrderItem[]
+  Product             Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
+  ProductVariantImage ProductVariantImage[]
+  CartItem            CartItem[]            @relation("CartItemToProductVariant")
+
+  @@index([productId])
+  @@index([sku])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ProductVariantImage {
+  id             String         @id
+  alt            String?
+  isDefault      Boolean        @default(false)
+  variantId      String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime
+  urlpath        String
+  ProductVariant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@index([variantId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Review {
+  id                 String        @id
+  rating             Int
+  title              String?
+  comment            String
+  isVerifiedPurchase Boolean       @default(false)
+  userId             String
+  productId          String
+  helpfulCount       Int           @default(0)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime
+  Product            Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  User               User          @relation(fields: [userId], references: [id])
+  ReviewImage        ReviewImage[]
+  ReviewReply        ReviewReply[]
+
+  @@unique([userId, productId])
+  @@index([productId])
+  @@index([rating])
+  @@index([userId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ReviewImage {
+  id        String   @id
+  alt       String?
+  reviewId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  urlpath   String
+  Review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ReviewReply {
+  id           String   @id
+  comment      String
+  isFromSeller Boolean  @default(false)
+  reviewId     String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  Review       Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model SellerProfile {
+  id                       String              @id
+  userId                   String              @unique
+  companyName              String
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime
+  businessDocumentFile     String?
+  businessDocumentType     String?
+  businessEmail            String?
+  businessPhoneNumber      String?
+  businessRegisteredName   String?
+  businessType             String?
+  description              String?             @default("")
+  individualRegisteredName String?
+  isVerified               Boolean             @default(false)
+  returnsTerms             String?
+  sellerEmail              String?
+  sellerPhoneNumber        String?
+  shippingTerms            String?
+  shopName                 String?
+  storeStatus              String?             @default("waiting submission")
+  Address                  Address?
+  CartItem                 CartItem[]
+  EscrowPayment            EscrowPayment[]
+  OrderItem                OrderItem[]
+  PickupAddress            PickupAddress?
+  Product                  Product[]
+  User                     User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  SellerWallet             SellerWallet?
+  StoreRatingSummary       StoreRatingSummary?
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model StoreRating {
+  id        String   @id
+  sellerId  String
+  buyerId   String
+  comment   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+  rating    Int
+
+  @@unique([sellerId, buyerId])
+  @@index([buyerId])
+  @@index([sellerId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model StoreRatingSummary {
+  id            String        @id
+  sellerId      String        @unique
+  average       Float
+  totalCount    Int
+  updatedAt     DateTime
+  SellerProfile SellerProfile @relation(fields: [sellerId], references: [id])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model User {
+  id                                       String          @id
+  email                                    String          @unique
+  password                                 String?
+  role                                     UserRole
+  firstName                                String
+  lastName                                 String
+  middleName                               String?
+  suffix                                   String?
+  contactNumber                            String
+  createdAt                                DateTime        @default(now())
+  updatedAt                                DateTime
+  profilePicture                           String?
+  dateOfBirth                              String?
+  status                                   UserStatus      @default(ACTIVE)
+  BuyerProfile                             BuyerProfile?
+  Conversation_Conversation_buyerIdToUser  Conversation[]  @relation("Conversation_buyerIdToUser")
+  Conversation_Conversation_sellerIdToUser Conversation[]  @relation("Conversation_sellerIdToUser")
+  Message                                  Message[]
+  MessageStatus                            MessageStatus[]
+  OAuthAccount                             OAuthAccount[]
+  Review                                   Review[]
+  SellerProfile                            SellerProfile?
+
+  @@index([role])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Cart {
+  id           String       @id
+  buyerId      String       @unique
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime
+  BuyerProfile BuyerProfile @relation(fields: [buyerId], references: [id])
+  CartItem     CartItem[]
+
+  @@index([buyerId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model CartItem {
+  id                 String           @id
+  cartId             String
+  productId          String
+  quantity           Int              @default(1)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime
+  variantCombination String[]
+  basePrice          Decimal          @db.Decimal(10, 2)
+  isSale             Boolean          @default(false)
+  name               String
+  salePrice          Decimal?         @db.Decimal(10, 2)
+  variantId          String?
+  buyerId            String
+  images             String
+  sellerId           String
+  BuyerProfile       BuyerProfile     @relation(fields: [buyerId], references: [id])
+  Cart               Cart             @relation(fields: [cartId], references: [id])
+  Product            Product          @relation(fields: [productId], references: [id])
+  SellerProfile      SellerProfile    @relation(fields: [sellerId], references: [id])
+  ProductVariant     ProductVariant[] @relation("CartItemToProductVariant")
+  ShippingMethod     ShippingMethod[] @relation("CartItemToShippingMethod")
+
+  @@index([cartId])
+  @@index([productId])
+  @@index([buyerId])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model EscrowPayment {
+  id                String        @id
+  orderId           String        @unique
+  buyerId           String
+  sellerId          String
+  amount            Decimal       @db.Decimal(10, 2)
+  razorpayPaymentId String
+  status            EscrowStatus  @default(HELD)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime
+  releaseDate       DateTime?
+  releasedAt        DateTime?
+  Order             Order         @relation(fields: [orderId], references: [id])
+  Seller            SellerProfile @relation(fields: [sellerId], references: [id])
+}
+
+model SellerWallet {
+  id               String        @id
+  sellerId         String        @unique
+  balance          Decimal       @default(0) @db.Decimal(10, 2)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime
+  availableBalance Decimal       @default(0) @db.Decimal(10, 2)
+  pendingBalance   Decimal       @default(0) @db.Decimal(10, 2)
+  SellerProfile    SellerProfile @relation(fields: [sellerId], references: [id])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model ShippingMethod {
+  id            String     @id
+  productId     String
+  name          String
+  price         Float
+  estimatedDays String
+  description   String?
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime
+  Product       Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  CartItem      CartItem[] @relation("CartItemToShippingMethod")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum FileType {
+  IMAGE
+  VIDEO
+  PDF
+  OTHER
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  FILE
+}
+
+enum OAuthProvider {
+  GOOGLE
+  APPLE
+}
+
+enum StatusType {
+  SENT
+  DELIVERED
+  READ
+}
+
+enum UserRole {
+  BUYER
+  SELLER
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum EscrowStatus {
+  PENDING
+  HELD
+  RELEASED
+  REFUNDED
+  DISPUTED
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum TransactionType {
+  PAYMENT_RECEIVED
+  WITHDRAWAL
+  REFUND
+  ADJUSTMENT
+}
+
+enum StoreStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}

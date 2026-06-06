@@ -1,0 +1,383 @@
+{
+	"info": {
+		"_postman_id": "ninja-bazaar-admin-api",
+		"name": "Ninja Bazaar Admin API",
+		"description": "Postman collection for Ninja Bazaar Admin Panel API endpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{authToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Sign In (Get JWT Token)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    // NextAuth returns session with accessToken",
+									"    if (response.accessToken) {",
+									"        pm.collectionVariables.set('authToken', response.accessToken);",
+									"    } else if (response.session && response.session.accessToken) {",
+									"        pm.collectionVariables.set('authToken', response.session.accessToken);",
+									"    }",
+									"    console.log('Auth token set:', pm.collectionVariables.get('authToken'));",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"admin123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/signin",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "signin"]
+						},
+						"description": "Sign in with admin credentials to get JWT token. Note: NextAuth uses POST to /api/auth/[...nextauth]"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current Session",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/session",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "auth", "session"]
+						},
+						"description": "Get current authenticated session"
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints for admin login"
+		},
+		{
+			"name": "User Management",
+			"item": [
+				{
+					"name": "Get All Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/get",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users", "get"]
+						},
+						"description": "Retrieve all users from the database"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/get-user-by-id?id={{userId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "get-user-by-id"],
+							"query": [
+								{
+									"key": "id",
+									"value": "{{userId}}",
+									"description": "User ID"
+								}
+							]
+						},
+						"description": "Get detailed user information by ID including buyer/seller profiles"
+					},
+					"response": []
+				},
+				{
+					"name": "Update User Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": \"{{userId}}\",\n    \"status\": \"ACTIVE\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/update",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "users", "update"]
+						},
+						"description": "Update user status (ACTIVE, SUSPENDED, BANNED)"
+					},
+					"response": []
+				}
+			],
+			"description": "User management endpoints for admin panel"
+		},
+		{
+			"name": "Order Management",
+			"item": [
+				{
+					"name": "Get All Orders",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/get-all-orders",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "get-all-orders"]
+						},
+						"description": "Retrieve all orders with buyer and product details"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Order Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/get-order-details?orderId={{orderId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "get-order-details"],
+							"query": [
+								{
+									"key": "orderId",
+									"value": "{{orderId}}",
+									"description": "Order ID"
+								}
+							]
+						},
+						"description": "Get detailed order information including items, buyer, seller, and escrow details"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Order Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"orderId\": \"{{orderId}}\",\n    \"status\": \"PROCESSING\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/update-order-status",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "update-order-status"]
+						},
+						"description": "Update order status. Allowed values: PROCESSING, SHIPPED, DELIVERED, CANCELLED"
+					},
+					"response": []
+				}
+			],
+			"description": "Order management endpoints"
+		},
+		{
+			"name": "Escrow Management",
+			"item": [
+				{
+					"name": "Get All Escrow Payments",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/escrow/get",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "escrow", "get"]
+						},
+						"description": "Retrieve all escrow payments with order, buyer, and seller details"
+					},
+					"response": []
+				},
+				{
+					"name": "Release Escrow Payment",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/escrow/release?transactionId={{escrowId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "escrow", "release"],
+							"query": [
+								{
+									"key": "transactionId",
+									"value": "{{escrowId}}",
+									"description": "Escrow payment ID to release"
+								}
+							]
+						},
+						"description": "Release an escrow payment to the seller. Changes status to RELEASED"
+					},
+					"response": []
+				}
+			],
+			"description": "Escrow management endpoints for managing payments"
+		},
+		{
+			"name": "Seller Management",
+			"item": [
+				{
+					"name": "Get Seller Profiles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/seller/profile?id={{sellerId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "seller", "profile"],
+							"query": [
+								{
+									"key": "id",
+									"value": "{{sellerId}}",
+									"description": "Optional: Specific seller ID (leave empty for all)"
+								}
+							]
+						},
+						"description": "Get seller profile(s). Returns all profiles if no ID provided, or specific profile if ID provided"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Seller Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"sellerId\": \"{{sellerId}}\",\n    \"isVerified\": true,\n    \"storeStatus\": \"APPROVED\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/seller/profile",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "seller", "profile"]
+						},
+						"description": "Update seller verification status and store status"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Seller Document",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/seller/document?id={{sellerId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "seller", "document"],
+							"query": [
+								{
+									"key": "id",
+									"value": "{{sellerId}}",
+									"description": "Seller ID"
+								}
+							]
+						},
+						"description": "Download/view seller's business document (PDF, PNG, JPG)"
+					},
+					"response": []
+				}
+			],
+			"description": "Seller management endpoints"
+		},
+		{
+			"name": "Product Management",
+			"item": [
+				{
+					"name": "Get All Seller Products",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/seller/products",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "seller", "products"]
+						},
+						"description": "Retrieve all products from all sellers with images and variants"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Product Approval Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"productId\": \"{{productId}}\",\n    \"adminApproved\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/seller/products",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "seller", "products"]
+						},
+						"description": "Update product approval status (adminApproved: true/false)"
+					},
+					"response": []
+				}
+			],
+			"description": "Product management endpoints for seller products"
+		}
+	]
+}
