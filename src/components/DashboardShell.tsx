@@ -9,7 +9,7 @@ import {
   IconLayoutSidebarLeftExpand,
   IconLogout,
 } from "@tabler/icons-react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 
 export function DashboardShell({
@@ -19,7 +19,6 @@ export function DashboardShell({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const pathname = usePathname();
-  const router = useRouter();
   const { data: session } = useSession();
 
   const mainRef = React.useRef<HTMLElement>(null);

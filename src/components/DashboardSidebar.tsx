@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { IconChevronDown, IconLogout } from "@tabler/icons-react";
 import { sidebarNav, isNavSection } from "@/lib/sidebar-nav";
-import React, { useState } from "react";
+import React from "react";
 import { twMerge } from "tailwind-merge";
 import { signOut } from "next-auth/react";
 

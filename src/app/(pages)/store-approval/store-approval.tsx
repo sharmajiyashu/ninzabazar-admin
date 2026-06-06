@@ -8,7 +8,7 @@ import {
 	ColumnDef,
 } from '@tanstack/react-table';
 import { Store } from '@/app/types/store-types';
-import { Search, CheckCircle, Building2 } from 'lucide-react';
+import { Search, Building2 } from 'lucide-react';
 import {
 	Pagination,
 	PaginationContent,

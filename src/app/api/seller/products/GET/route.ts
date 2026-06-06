@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/prisma';
 
 export async function GET() {
 	try {
@@ -27,7 +25,8 @@ export async function GET() {
 		});
 
 		// Format data for frontend display
-		const formattedProducts = products.map((product) => ({
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const formattedProducts = products.map((product: any) => ({
 			id: product.id,
 			productName: product.name,
 			description: product.description,
@@ -45,19 +44,22 @@ export async function GET() {
 			createdAt: product.createdAt,
 			updatedAt: product.updatedAt,
 			status: product.adminApproved ? 'approved' : 'under review',
-			images: product.ProductImage.map((img) => ({
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			images: product.ProductImage.map((img: any) => ({
 				id: img.id,
 				url: img.urlpath,
 				alt: img.alt || product.name,
 				isDefault: img.isDefault,
 			})),
-			variants: product.ProductVariant.map((variant) => ({
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			variants: product.ProductVariant.map((variant: any) => ({
 				id: variant.id,
 				title: variant.title,
 				option: variant.option,
 				price: parseFloat(variant.price.toString()),
 				sku: variant.sku,
-				images: variant.ProductVariantImage.map((img) => ({
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				images: variant.ProductVariantImage.map((img: any) => ({
 					id: img.id,
 					url: img.urlpath,
 					alt:

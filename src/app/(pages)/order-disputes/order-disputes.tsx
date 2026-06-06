@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Package, ShoppingCart } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 import OrdersTable from './tabs/orders-table';
 
 const OrdersAndDisputes: React.FC = () => {

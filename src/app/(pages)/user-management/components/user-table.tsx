@@ -15,7 +15,6 @@ import UserProfileModal from '@/app/(pages)/user-management/components/view-prof
 import {
 	Search,
 	Users,
-	UserCheck,
 	MoreHorizontal,
 	Eye,
 	Ban,
@@ -434,8 +433,8 @@ const UserTable: React.FC = () => {
 									<button
 										key={page}
 										className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${page === pageIndex
-												? 'bg-green-600 text-white shadow-md'
-												: 'text-gray-700 hover:bg-green-100 bg-white border border-gray-300'
+											? 'bg-green-600 text-white shadow-md'
+											: 'text-gray-700 hover:bg-green-100 bg-white border border-gray-300'
 											}`}
 										onClick={() => setPageIndex(page)}
 									>
