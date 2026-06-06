@@ -4,7 +4,8 @@ import {
   IconBuildingStore,
   IconShoppingCart,
   IconShieldLock,
-  IconLayoutDashboard
+  IconLayoutDashboard,
+  IconTags
 } from "@tabler/icons-react";
 
 export interface SidebarNavItem {
@@ -33,6 +34,15 @@ export const sidebarNav: SidebarNavEntry[] = [
   { titleKey: "User Management", href: "/user-management", icon: IconUsers },
   { titleKey: "Product Approval", href: "/product-approval", icon: IconPackage },
   { titleKey: "Store Approval", href: "/store-approval", icon: IconBuildingStore },
+  {
+    titleKey: "Category Management",
+    href: "/category-management",
+    icon: IconTags,
+    items: [
+      { titleKey: "Categories", href: "/category-management", icon: IconTags },
+      { titleKey: "Subcategories", href: "/category-management/subcategories", icon: IconTags }
+    ]
+  },
   { titleKey: "Order Management", href: "/order-disputes", icon: IconShoppingCart },
   { titleKey: "Escrow Management", href: "/escrow-management", icon: IconShieldLock },
 ];

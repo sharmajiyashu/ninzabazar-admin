@@ -222,6 +222,7 @@ model Product {
   status         String           @default("pending")
   totalPurchases Int              @default(0)
   category       String?
+  subCategory    String?
   CartItem       CartItem[]
   Conversation   Conversation[]
   OrderItem      OrderItem[]
@@ -571,4 +572,31 @@ enum StoreStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  imageUrl    String?
+  isTrending  Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  subCategories SubCategory[]
+}
+
+model SubCategory {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  imageUrl    String?
+  isTrending  Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([categoryId])
 }
