@@ -7,7 +7,7 @@ config({ path: ".env" });
 
 const prisma = new PrismaClient();
 
-const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL || "admin@gmail.com";
+const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL || "admin@example.com";
 const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD || "Admin@123";
 
 async function createAdmin() {

@@ -1,22 +1,11 @@
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import {
-  AUTH_HOME_PATH,
-  initAuthEnv,
-  isVercelDeployment,
-  PRODUCTION_APP_URL,
-} from './auth-env';
+import { ROUTES } from '@/constants/routes';
+import { getSessionCookieOptions } from '@/lib/auth-session';
 import { comparePassword } from './hashPassword';
 import prisma from './prisma';
 
-initAuthEnv();
-
-const useSecureCookies =
-  isVercelDeployment() ||
-  process.env.NEXTAUTH_URL?.startsWith('https://') ||
-  process.env.NEXT_PUBLIC_APP_URL?.startsWith('https://');
-
-const cookiePrefix = useSecureCookies ? '__Secure-' : '';
+const sessionCookie = getSessionCookieOptions();
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
@@ -65,12 +54,12 @@ export const authOptions: NextAuthOptions = {
   ],
   cookies: {
     sessionToken: {
-      name: `${cookiePrefix}next-auth.session-token`,
+      name: sessionCookie.name,
       options: {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: !!useSecureCookies,
+        secure: sessionCookie.secure,
       },
     },
   },
@@ -79,18 +68,19 @@ export const authOptions: NextAuthOptions = {
     maxAge: 30 * 24 * 60 * 60,
   },
   pages: {
-    signIn: '/signin',
+    signIn: ROUTES.login,
   },
   callbacks: {
     async redirect({ url, baseUrl }) {
-      const safeBase = baseUrl || PRODUCTION_APP_URL;
+      const origin = baseUrl || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+
       if (url.startsWith('/')) {
-        return `${safeBase}${url}`;
+        return `${origin}${url}`;
       }
-      if (url.startsWith(safeBase)) {
+      if (url.startsWith(origin)) {
         return url;
       }
-      return `${safeBase}${AUTH_HOME_PATH}`;
+      return `${origin}${ROUTES.dashboard}`;
     },
     async jwt({ token, user }) {
       if (user) {

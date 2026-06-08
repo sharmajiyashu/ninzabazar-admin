@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { memo, useEffect, useRef, useState } from "react";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
@@ -10,9 +10,11 @@ import {
   IconLogout,
 } from "@tabler/icons-react";
 import { usePathname } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { logoutAdmin } from "@/lib/auth-client";
+import { isPublicPath } from "@/utils/routes";
 
-export function DashboardShell({
+function DashboardShellInner({
   children,
 }: {
   children: React.ReactNode;
@@ -20,8 +22,7 @@ export function DashboardShell({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const pathname = usePathname();
   const { data: session } = useSession();
-
-  const mainRef = React.useRef<HTMLElement>(null);
+  const mainRef = useRef<HTMLElement>(null);
 
   const displayName = session?.user?.name ?? "Admin";
   const roleLabel = "Administrator";
@@ -30,15 +31,16 @@ export function DashboardShell({
     mainRef.current?.scrollTo({ top: 0 });
   }, [pathname]);
 
-  if (pathname === '/signin') {
+  if (isPublicPath(pathname)) {
     return <>{children}</>;
   }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <aside
-        className={`shrink-0 overflow-hidden transition-[width] duration-500 ease-out ${sidebarOpen ? "w-64" : "w-0"
-          }`}
+        className={`shrink-0 overflow-hidden transition-[width] duration-500 ease-out ${
+          sidebarOpen ? "w-64" : "w-0"
+        }`}
       >
         <div className="flex h-full w-64 flex-col border-r border-sidebar-border bg-sidebar">
           <DashboardSidebar />
@@ -48,7 +50,7 @@ export function DashboardShell({
         <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-3 border-b border-border bg-card px-4 shadow-sm sm:px-6">
           <button
             type="button"
-            onClick={() => setSidebarOpen((o: boolean) => !o)}
+            onClick={() => setSidebarOpen((open) => !open)}
             className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             aria-label={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
           >
@@ -85,16 +87,16 @@ export function DashboardShell({
                     <div className="text-sm font-medium text-foreground">
                       {displayName}
                     </div>
-                    {roleLabel && (
-                      <div className="mt-0.5 text-xs text-muted-foreground">
-                        {roleLabel}
-                      </div>
-                    )}
+                    <div className="mt-0.5 text-xs text-muted-foreground">
+                      {roleLabel}
+                    </div>
                   </div>
                   <DropdownMenu.Separator className="my-1 h-px bg-border" />
                   <DropdownMenu.Item
                     className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus:bg-muted focus:text-foreground"
-                    onSelect={() => signOut()}
+                    onSelect={() => {
+                      void logoutAdmin();
+                    }}
                   >
                     <IconLogout className="h-4 w-4" aria-hidden />
                     Log Out
@@ -109,10 +111,7 @@ export function DashboardShell({
           className="min-h-0 flex-1 overflow-auto p-4"
           id="main-content"
         >
-          <div
-            key={pathname}
-            className="mx-auto max-w-7xl animate-in fade-in duration-200"
-          >
+          <div className="mx-auto max-w-7xl animate-in fade-in duration-200">
             {children}
           </div>
         </main>
@@ -125,3 +124,5 @@ export function DashboardShell({
     </div>
   );
 }
+
+export const DashboardShell = memo(DashboardShellInner);

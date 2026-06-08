@@ -19,8 +19,8 @@ export interface Store {
 	individualRegisteredName: string;
 	returnPolicy: string;
 	shippingPolicy: string;
-	sellerEmail: string;
-	sellerPhoneNumber: string;
+	contactEmail: string;
+	contactPhone: string;
 	businessDocumentFile?: string | null;
 	businessPhoneNumber: string;
 }

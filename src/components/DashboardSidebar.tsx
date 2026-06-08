@@ -4,15 +4,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { IconChevronDown, IconLogout } from "@tabler/icons-react";
+import { ROUTES } from "@/constants/routes";
 import {
   sidebarNav,
   isNavSection,
   isNavEntryActive,
   type SidebarNavEntry,
-} from "@/lib/sidebar-nav";
+} from "@/constants/navigation";
 import React from "react";
 import { twMerge } from "tailwind-merge";
-import { signOut } from "next-auth/react";
+import { logoutAdmin } from "@/lib/auth-client";
 
 function NavEntry({
   item,
@@ -130,7 +131,7 @@ export function DashboardSidebar() {
   >({});
 
   const handleLogout = () => {
-    signOut();
+    void logoutAdmin();
   };
 
   return (
@@ -138,7 +139,7 @@ export function DashboardSidebar() {
       {/* Brand Header */}
       <div className="flex h-16 shrink-0 items-center px-6">
         <Link
-          href="/"
+          href={ROUTES.dashboard}
           className="flex min-w-0 items-center gap-2.5 transition-transform hover:opacity-90 active:scale-[0.98]"
         >
           <span className="text-xl font-bold text-white truncate">Ninja Bazaar</span>

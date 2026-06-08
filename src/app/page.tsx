@@ -1,13 +1,6 @@
-import { requireAuth } from '@/lib/auth';
-import UserManagementPage from './(pages)/user-management/page';
+import { redirect } from 'next/navigation';
+import { ROUTES } from '@/constants/routes';
 
-export const dynamic = 'force-dynamic';
-
-export default async function Home() {
-	await requireAuth();
-	return (
-		<div>
-			<UserManagementPage />
-		</div>
-	);
+export default function HomePage() {
+  redirect(ROUTES.dashboard);
 }

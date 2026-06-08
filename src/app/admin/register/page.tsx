@@ -19,6 +19,7 @@ import {
 	FormMessage,
 } from '@/components/ui/form';
 import { useRouter } from 'next/navigation';
+import { ROUTES } from '@/constants/routes';
 import { Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 
@@ -75,7 +76,7 @@ const RegisterForm = () => {
 			}
 
 			toast.success('Admin registered successfully!', { className: 'm-6' });
-			router.push('/signin');
+			router.push(ROUTES.login);
 			setIsLoading(false);
 		} catch (error) {
 			console.log(error);
@@ -179,7 +180,7 @@ const RegisterForm = () => {
 										{isLoading ? 'Loading...' : 'Register'}
 									</Button>
 									<div className="flex justify-center">
-										<Link href="/signin" className="underline text-disabledgrey hover:text-gray-800">
+										<Link href={ROUTES.login} className="underline text-disabledgrey hover:text-gray-800">
 											Back to Login
 										</Link>
 									</div>
