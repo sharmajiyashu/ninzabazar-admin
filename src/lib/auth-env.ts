@@ -4,7 +4,7 @@ import { getToken } from 'next-auth/jwt';
 export const AUTH_HOME_PATH = '/';
 export const AUTH_SIGNIN_PATH = '/signin';
 
-/** Canonical production URL — used on Vercel when env vars are not set. */
+/** Canonical live URL */
 export const PRODUCTION_APP_URL = 'https://ninzabazar-admin.vercel.app';
 
 type RequestWithHeaders = {
@@ -21,16 +21,15 @@ export function isVercelDeployment() {
   return process.env.VERCEL === '1';
 }
 
+export function isLocalhost(host: string) {
+  return host.startsWith('localhost') || host.startsWith('127.0.0.1');
+}
+
 export function getConfiguredAppUrl(): string | undefined {
   const url = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL;
   return url?.replace(/\/$/, '');
 }
 
-/**
- * Resolve auth base URL:
- * - Local dev: current request origin (any port)
- * - Vercel/live: request origin, or configured env URL, or production fallback
- */
 export function resolveAuthUrl(request?: RequestWithHeaders): string {
   if (request?.nextUrl?.origin) {
     return request.nextUrl.origin;
@@ -43,9 +42,7 @@ export function resolveAuthUrl(request?: RequestWithHeaders): string {
     if (host) {
       const protocol =
         request.headers.get('x-forwarded-proto') ??
-        (host.startsWith('localhost') || host.startsWith('127.0.0.1')
-          ? 'http'
-          : 'https');
+        (isLocalhost(host) ? 'http' : 'https');
       return `${protocol}://${host}`;
     }
   }
@@ -58,14 +55,18 @@ export function resolveAuthUrl(request?: RequestWithHeaders): string {
   return `http://localhost:${port}`;
 }
 
-/** Set NEXTAUTH_URL before NextAuth runs (required for cookies on HTTPS). */
+export function usesSecureCookies(request?: RequestWithHeaders): boolean {
+  const url = resolveAuthUrl(request);
+  return url.startsWith('https://');
+}
+
 export function applyAuthUrlFromRequest(request?: RequestWithHeaders) {
   const url = resolveAuthUrl(request);
   process.env.NEXTAUTH_URL = url;
   process.env.AUTH_URL = url;
 }
 
-/** Initialize auth env on server startup (Vercel cold starts). */
+/** Set auth URL on Vercel cold starts (no request context yet). */
 export function initAuthEnv() {
   if (isVercelDeployment()) {
     const url = getConfiguredAppUrl() ?? PRODUCTION_APP_URL;
@@ -74,24 +75,28 @@ export function initAuthEnv() {
   }
 }
 
-/**
- * Read session JWT from cookies.
- * Tries both secure and non-secure cookie names (HTTP local vs HTTPS Vercel).
- */
+export function getSessionCookieName(secure: boolean) {
+  return secure
+    ? '__Secure-next-auth.session-token'
+    : 'next-auth.session-token';
+}
+
 export async function getAuthToken(request: NextRequest) {
   applyAuthUrlFromRequest(request);
 
   const secret = process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET;
   if (!secret) {
-    console.error('[auth] NEXTAUTH_SECRET is not set');
     return null;
   }
 
-  for (const secureCookie of [true, false]) {
+  const preferSecure = usesSecureCookies(request);
+
+  for (const secureCookie of preferSecure ? [true, false] : [false, true]) {
     const token = await getToken({
       req: request,
       secret,
       secureCookie,
+      cookieName: getSessionCookieName(secureCookie),
     });
     if (token) {
       return token;

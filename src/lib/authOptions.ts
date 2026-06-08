@@ -1,87 +1,111 @@
-import NextAuth, { NextAuthOptions } from 'next-auth';
+import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { AUTH_HOME_PATH, initAuthEnv } from './auth-env';
+import {
+  AUTH_HOME_PATH,
+  initAuthEnv,
+  isVercelDeployment,
+  PRODUCTION_APP_URL,
+} from './auth-env';
 import { comparePassword } from './hashPassword';
 import prisma from './prisma';
 
 initAuthEnv();
 
+const useSecureCookies =
+  isVercelDeployment() ||
+  process.env.NEXTAUTH_URL?.startsWith('https://') ||
+  process.env.NEXT_PUBLIC_APP_URL?.startsWith('https://');
+
+const cookiePrefix = useSecureCookies ? '__Secure-' : '';
+
 export const authOptions: NextAuthOptions = {
-	secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
-	providers: [
-		CredentialsProvider({
-			name: 'Credentials',
-			credentials: {
-				username: { label: 'Username', type: 'text' },
-				password: { label: 'Password', type: 'password' },
-			},
-			async authorize(credentials) {
-				try {
-					if (!credentials?.username || !credentials?.password) {
-						return null;
-					}
+  secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
+  providers: [
+    CredentialsProvider({
+      id: 'credentials',
+      name: 'Credentials',
+      credentials: {
+        username: { label: 'Username', type: 'text' },
+        password: { label: 'Password', type: 'password' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.username || !credentials?.password) {
+          return null;
+        }
 
-					const admin = await prisma.admin.findUnique({
-						where: {
-							username: credentials.username,
-						},
-					});
+        try {
+          const admin = await prisma.admin.findUnique({
+            where: { username: credentials.username },
+          });
 
-					if (!admin?.password) {
-						return null;
-					}
+          if (!admin?.password) {
+            return null;
+          }
 
-					const validatePassword = await comparePassword(
-						credentials.password,
-						admin.password
-					);
+          const valid = await comparePassword(
+            credentials.password,
+            admin.password
+          );
 
-					if (!validatePassword) {
-						return null;
-					}
+          if (!valid) {
+            return null;
+          }
 
-					return {
-						id: admin.id.toString(),
-						name: admin.username,
-					};
-				} catch (error) {
-					console.error('Login authorize error:', error);
-					return null;
-				}
-			},
-		}),
-	],
-	session: {
-		strategy: 'jwt',
-		maxAge: 30 * 24 * 60 * 60,
-	},
-	pages: {
-		signIn: '/signin',
-	},
-	callbacks: {
-		async redirect({ url, baseUrl }) {
-			if (url.startsWith('/')) {
-				return `${baseUrl}${url}`;
-			}
-			if (url.startsWith(baseUrl)) {
-				return url;
-			}
-			return `${baseUrl}${AUTH_HOME_PATH}`;
-		},
-		jwt: async ({ token, user }) => {
-			if (user) {
-				token.id = (user as { id?: string }).id || token.id;
-				token.name = (user as { name?: string | null }).name || token.name;
-			}
-			return token;
-		},
-		session: async ({ session, token }) => {
-			if (token && session.user) {
-				session.user.id = token.id as string;
-			}
-			return session;
-		},
-	},
+          return {
+            id: admin.id,
+            name: admin.username,
+            email: admin.username,
+          };
+        } catch (error) {
+          console.error('[auth] authorize failed:', error);
+          return null;
+        }
+      },
+    }),
+  ],
+  cookies: {
+    sessionToken: {
+      name: `${cookiePrefix}next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: !!useSecureCookies,
+      },
+    },
+  },
+  session: {
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60,
+  },
+  pages: {
+    signIn: '/signin',
+  },
+  callbacks: {
+    async redirect({ url, baseUrl }) {
+      const safeBase = baseUrl || PRODUCTION_APP_URL;
+      if (url.startsWith('/')) {
+        return `${safeBase}${url}`;
+      }
+      if (url.startsWith(safeBase)) {
+        return url;
+      }
+      return `${safeBase}${AUTH_HOME_PATH}`;
+    },
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.name = user.name ?? undefined;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.name = (token.name as string | undefined) ?? null;
+      }
+      return session;
+    },
+  },
+  debug: process.env.NODE_ENV === 'development',
 };
-
-export default NextAuth(authOptions);
