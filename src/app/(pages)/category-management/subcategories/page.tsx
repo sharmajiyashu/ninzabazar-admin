@@ -9,9 +9,8 @@ import {
   ColumnDef,
 } from '@tanstack/react-table';
 import { Search, Tags, Plus, Image as ImageIcon } from 'lucide-react';
-// @ts-ignore
+import Image from 'next/image';
 import SubCategoryFormModal from './components/subcategory-form-modal';
-// @ts-ignore
 import ActionDropdown from './components/action-dropdown';
 
 export type Category = {
@@ -110,7 +109,7 @@ export default function SubCategoryManagementPage() {
         return (
           <div className="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden">
             {url ? (
-              <img src={url} alt="SubCategory" className="w-full h-full object-cover" />
+              <Image src={url} alt="SubCategory" width={48} height={48} className="w-full h-full object-cover" />
             ) : (
               <ImageIcon className="text-gray-400" size={20} />
             )}

@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-const db = prisma as typeof prisma & {
-  brand: { findMany: Function; create: Function; update: Function; delete: Function };
-  productColor: { findMany: Function; create: Function; update: Function; delete: Function };
-  productMaterial: { findMany: Function; create: Function; update: Function; delete: Function };
-};
-
 export async function GET(request: NextRequest) {
   try {
     const subCategoryId = request.nextUrl.searchParams.get('subCategoryId');
-    const brands = await db.brand.findMany({
+    const brands = await prisma.brand.findMany({
       where: {
         ...(subCategoryId ? { subCategoryId } : {}),
       },
@@ -36,7 +30,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name and subcategory are required' }, { status: 400 });
     }
 
-    const brand = await db.brand.create({
+    const brand = await prisma.brand.create({
       data: { name: name.trim(), subCategoryId, isActive },
       include: {
         SubCategory: { select: { id: true, name: true, category: { select: { name: true } } } },

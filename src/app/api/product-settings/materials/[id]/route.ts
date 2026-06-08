@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-const db = prisma as typeof prisma & {
-  productMaterial: { update: Function; delete: Function };
-};
-
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -14,7 +10,7 @@ export async function PUT(
     const body = await request.json();
     const { name, isActive } = body;
 
-    const material = await db.productMaterial.update({
+    const material = await prisma.productMaterial.update({
       where: { id },
       data: {
         ...(name !== undefined && { name: name.trim() }),
@@ -35,7 +31,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await db.productMaterial.delete({ where: { id } });
+    await prisma.productMaterial.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting material:', error);

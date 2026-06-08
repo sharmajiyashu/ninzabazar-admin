@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
+import Image from 'next/image';
 import { X, Upload, Loader2 } from 'lucide-react';
 import { SubCategory, Category } from '../page';
 
@@ -72,9 +73,12 @@ export default function SubCategoryFormModal({ subcategory, categories, onClose,
           window.open(productsUrl, '_blank');
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving subcategory:', err);
-      setError(err.response?.data?.error || 'Failed to save subcategory');
+      const message = axios.isAxiosError(err)
+        ? (err.response?.data as { error?: string } | undefined)?.error
+        : undefined;
+      setError(message || 'Failed to save subcategory');
     } finally {
       setLoading(false);
     }
@@ -156,7 +160,7 @@ export default function SubCategoryFormModal({ subcategory, categories, onClose,
             >
               {previewUrl ? (
                 <div className="relative w-full h-40 rounded-lg overflow-hidden border border-gray-200">
-                  <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                  <Image src={previewUrl} alt="Preview" fill className="object-cover" unoptimized />
                   <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity">
                     <span className="text-white text-sm font-medium">Click to change image</span>
                   </div>

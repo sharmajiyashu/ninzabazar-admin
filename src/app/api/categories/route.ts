@@ -9,7 +9,6 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function GET() {
   try {
-    // @ts-ignore
     const categories = await prisma.category.findMany({
       include: {
         _count: {
@@ -38,8 +37,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
-    // Check if category exists
-    // @ts-ignore
     const existing = await prisma.category.findUnique({ where: { name } });
     if (existing) {
       return NextResponse.json({ error: 'Category with this name already exists' }, { status: 400 });
@@ -57,7 +54,7 @@ export async function POST(request: NextRequest) {
       const fileName = `category_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
       const bucket = 'categories';
 
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from(bucket)
         .upload(fileName, buffer, {
           contentType: imageFile.type,
@@ -77,8 +74,6 @@ export async function POST(request: NextRequest) {
       imageUrl = publicUrlData.publicUrl;
     }
 
-    // Create the category in the database
-    // @ts-ignore
     const newCategory = await prisma.category.create({
       data: {
         name,

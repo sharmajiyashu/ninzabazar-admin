@@ -13,7 +13,6 @@ export async function GET(request: NextRequest) {
 
     const whereClause = categoryId ? { categoryId } : {};
 
-    // @ts-ignore
     const subcategories = await prisma.subCategory.findMany({
       where: whereClause,
       include: {
@@ -52,7 +51,7 @@ export async function POST(request: NextRequest) {
       const fileName = `subcategory_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
       const bucket = 'categories';
 
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from(bucket)
         .upload(fileName, buffer, {
           contentType: imageFile.type,
@@ -71,7 +70,6 @@ export async function POST(request: NextRequest) {
       imageUrl = publicUrlData.publicUrl;
     }
 
-    // @ts-ignore
     const newSubCategory = await prisma.subCategory.create({
       data: {
         name,

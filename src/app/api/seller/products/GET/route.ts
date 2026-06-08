@@ -1,35 +1,40 @@
 import { NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { resolveReviewStatus } from '@/lib/product-status';
+
+const productInclude = {
+	ProductImage: true,
+	ProductVariant: {
+		include: {
+			ProductVariantImage: true,
+		},
+	},
+	SellerProfile: {
+		include: {
+			User: {
+				select: {
+					firstName: true,
+					lastName: true,
+				},
+			},
+		},
+	},
+	Category: true,
+	SubCategory: true,
+} satisfies Prisma.ProductInclude;
+
+type ProductWithRelations = Prisma.ProductGetPayload<{
+	include: typeof productInclude;
+}>;
 
 export async function GET() {
 	try {
 		const products = await prisma.product.findMany({
-			include: {
-				ProductImage: true,
-				ProductVariant: {
-					include: {
-						ProductVariantImage: true,
-					},
-				},
-				SellerProfile: {
-					include: {
-						User: {
-							select: {
-								firstName: true,
-								lastName: true,
-							},
-						},
-					},
-				},
-				Category: true,
-				SubCategory: true,
-			},
+			include: productInclude,
 		});
 
-		// Format data for frontend display
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const formattedProducts = products.map((product: any) => {
+		const formattedProducts = products.map((product: ProductWithRelations) => {
 			const reviewStatus = resolveReviewStatus(product.status, product.adminApproved);
 			const statusLabel =
 				reviewStatus === 'approved'
@@ -61,19 +66,19 @@ export async function GET() {
 				status: statusLabel,
 				adminApproved: product.adminApproved,
 				isActive: product.isActive,
-				images: product.ProductImage.map((img: any) => ({
+				images: product.ProductImage.map((img) => ({
 					id: img.id,
 					url: img.urlpath,
 					alt: img.alt || product.name,
 					isDefault: img.isDefault,
 				})),
-				variants: product.ProductVariant.map((variant: any) => ({
+				variants: product.ProductVariant.map((variant) => ({
 					id: variant.id,
 					title: variant.title,
 					option: variant.option,
 					price: parseFloat(variant.price.toString()),
 					sku: variant.sku,
-					images: variant.ProductVariantImage.map((img: any) => ({
+					images: variant.ProductVariantImage.map((img) => ({
 						id: img.id,
 						url: img.urlpath,
 						alt:

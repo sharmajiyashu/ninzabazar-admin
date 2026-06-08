@@ -361,7 +361,7 @@ export default function LandingPageManagementPage() {
                 />
                 <div className="w-8 h-8 rounded-lg bg-gray-100 overflow-hidden shrink-0">
                   {cat.imageUrl ? (
-                    <img src={cat.imageUrl} alt={cat.name} className="w-full h-full object-cover" />
+                    <Image src={cat.imageUrl} alt={cat.name} width={32} height={32} className="w-full h-full object-cover" />
                   ) : null}
                 </div>
                 <span className="text-sm font-medium text-gray-700">{cat.name}</span>
@@ -719,7 +719,7 @@ export default function LandingPageManagementPage() {
                         onChange={() => toggleCategory(sectionProductIds, setSectionProductIds, product.id)}
                       />
                       <div className="w-10 h-10 bg-gray-100 rounded-lg overflow-hidden shrink-0">
-                        {product.image && <img src={product.image} alt={product.name} className="w-full h-full object-cover" />}
+                        {product.image && <Image src={product.image} alt={product.name} width={40} height={40} className="w-full h-full object-cover" />}
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-gray-800 truncate">{product.name}</p>

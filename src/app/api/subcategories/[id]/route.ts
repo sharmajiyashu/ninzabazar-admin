@@ -25,7 +25,6 @@ export async function PUT(
       return NextResponse.json({ error: 'Subcategory ID is required' }, { status: 400 });
     }
 
-    // @ts-ignore
     const subcategory = await prisma.subCategory.findUnique({ where: { id } });
     if (!subcategory) {
       return NextResponse.json({ error: 'Subcategory not found' }, { status: 404 });
@@ -72,7 +71,6 @@ export async function PUT(
       imageUrl = publicUrlData.publicUrl;
     }
 
-    // @ts-ignore
     const updatedSubCategory = await prisma.subCategory.update({
       where: { id },
       data: {
@@ -103,7 +101,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'Subcategory ID is required' }, { status: 400 });
     }
 
-    // @ts-ignore
     const subcategory = await prisma.subCategory.findUnique({ where: { id } });
     if (!subcategory) {
       return NextResponse.json({ error: 'Subcategory not found' }, { status: 404 });
@@ -122,7 +119,6 @@ export async function DELETE(
       }
     }
 
-    // @ts-ignore
     await prisma.subCategory.delete({ where: { id } });
 
     return NextResponse.json({ success: true });

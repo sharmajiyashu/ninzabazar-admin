@@ -10,9 +10,7 @@ import {
 } from '@tanstack/react-table';
 import { Search, Tags, Plus, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
-// @ts-ignore
 import CategoryFormModal from './components/category-form-modal';
-// @ts-ignore
 import ActionDropdown from './components/action-dropdown';
 
 export type Category = {
@@ -101,7 +99,7 @@ export default function CategoryManagementPage() {
         return (
           <div className="w-12 h-12 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center overflow-hidden">
             {url ? (
-              <img src={url} alt="Category" className="w-full h-full object-cover" />
+              <Image src={url} alt="Category" width={48} height={48} className="w-full h-full object-cover" />
             ) : (
               <ImageIcon className="text-gray-400" size={20} />
             )}

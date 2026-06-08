@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-const db = prisma as typeof prisma & {
-  productMaterial: { findMany: Function; create: Function; update: Function; delete: Function };
-};
-
 export async function GET() {
   try {
-    const materials = await db.productMaterial.findMany({
+    const materials = await prisma.productMaterial.findMany({
       include: { _count: { select: { ProductOnMaterial: true } } },
       orderBy: { name: 'asc' },
     });
@@ -27,7 +23,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
-    const material = await db.productMaterial.create({
+    const material = await prisma.productMaterial.create({
       data: { name: name.trim(), isActive },
     });
 

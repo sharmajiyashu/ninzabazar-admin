@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
-const db = prisma as typeof prisma & {
-  brand: { update: Function; delete: Function };
-};
-
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -14,7 +10,7 @@ export async function PUT(
     const body = await request.json();
     const { name, subCategoryId, isActive } = body;
 
-    const brand = await db.brand.update({
+    const brand = await prisma.brand.update({
       where: { id },
       data: {
         ...(name !== undefined && { name: name.trim() }),
@@ -36,7 +32,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await db.brand.delete({ where: { id } });
+    await prisma.brand.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting brand:', error);

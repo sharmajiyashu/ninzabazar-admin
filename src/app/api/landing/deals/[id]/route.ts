@@ -26,12 +26,12 @@ export async function PUT(
     const imageFile = formData.get('image') as File | null;
     const imageUrlInput = formData.get('imageUrl') as string | null;
 
-    const existing = (await adminFetchLandingDeals()).find((d: { id: string }) => d.id === id);
+    const existing = (await adminFetchLandingDeals()).find((d) => d.id === id);
     if (!existing) {
       return NextResponse.json({ error: 'Deal not found' }, { status: 404 });
     }
 
-    let imageUrl = imageUrlInput || (existing as { imageUrl: string }).imageUrl;
+    let imageUrl = imageUrlInput || existing.imageUrl;
 
     if (imageFile && imageFile.size > 0) {
       const bytes = await imageFile.arrayBuffer();

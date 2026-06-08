@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import prisma from '@/lib/prisma';
 
 function hasLandingModels() {
@@ -5,6 +6,17 @@ function hasLandingModels() {
 }
 
 export { hasLandingModels };
+
+export type LandingDealRecord = {
+  id: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  bgColor: string;
+  linkUrl: string | null;
+  sortOrder: number;
+  isActive: boolean;
+};
 
 export async function adminFetchLandingSections() {
   if (hasLandingModels()) {
@@ -19,10 +31,23 @@ export async function adminFetchLandingSections() {
 
 export async function adminUpdateLandingSection(
   id: string,
-  data: { title?: string; subtitle?: string | null; isVisible?: boolean; config?: unknown }
+  data: {
+    title?: string;
+    subtitle?: string | null;
+    isVisible?: boolean;
+    config?: unknown;
+  }
 ) {
   if (hasLandingModels()) {
-    return prisma.landingSection.update({ where: { id }, data });
+    return prisma.landingSection.update({
+      where: { id },
+      data: {
+        ...(data.title !== undefined && { title: data.title }),
+        ...(data.subtitle !== undefined && { subtitle: data.subtitle }),
+        ...(data.isVisible !== undefined && { isVisible: data.isVisible }),
+        ...(data.config !== undefined && { config: data.config as Prisma.InputJsonValue }),
+      },
+    });
   }
   const sets: string[] = [];
   const values: unknown[] = [];
@@ -40,11 +65,11 @@ export async function adminUpdateLandingSection(
   );
 }
 
-export async function adminFetchLandingDeals() {
+export async function adminFetchLandingDeals(): Promise<LandingDealRecord[]> {
   if (hasLandingModels()) {
     return prisma.landingDeal.findMany({ orderBy: { sortOrder: 'asc' } });
   }
-  return prisma.$queryRaw`
+  return prisma.$queryRaw<LandingDealRecord[]>`
     SELECT id, title, description, "imageUrl", "bgColor", "linkUrl", "sortOrder", "isActive"
     FROM "LandingDeal"
     ORDER BY "sortOrder" ASC

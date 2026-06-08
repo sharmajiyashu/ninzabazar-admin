@@ -25,8 +25,6 @@ export async function PUT(
       return NextResponse.json({ error: 'Category ID is required' }, { status: 400 });
     }
 
-    // Find existing category
-    // @ts-ignore
     const category = await prisma.category.findUnique({ where: { id } });
     if (!category) {
       return NextResponse.json({ error: 'Category not found' }, { status: 404 });
@@ -75,8 +73,6 @@ export async function PUT(
       imageUrl = publicUrlData.publicUrl;
     }
 
-    // Update the category
-    // @ts-ignore
     const updatedCategory = await prisma.category.update({
       where: { id },
       data: {
@@ -106,7 +102,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'Category ID is required' }, { status: 400 });
     }
 
-    // @ts-ignore
     const category = await prisma.category.findUnique({ where: { id } });
     if (!category) {
       return NextResponse.json({ error: 'Category not found' }, { status: 404 });
@@ -126,7 +121,6 @@ export async function DELETE(
       }
     }
 
-    // @ts-ignore
     await prisma.category.delete({ where: { id } });
 
     return NextResponse.json({ success: true });

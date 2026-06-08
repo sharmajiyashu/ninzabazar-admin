@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
+import Image from 'next/image';
 import { X, Upload, Loader2 } from 'lucide-react';
 import { Category } from '../page';
 
@@ -61,9 +62,12 @@ export default function CategoryFormModal({ category, onClose, onSuccess }: Prop
       }
       
       onSuccess();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error saving category:', err);
-      setError(err.response?.data?.error || 'Failed to save category');
+      const message = axios.isAxiosError(err)
+        ? (err.response?.data as { error?: string } | undefined)?.error
+        : undefined;
+      setError(message || 'Failed to save category');
     } finally {
       setLoading(false);
     }
@@ -128,7 +132,7 @@ export default function CategoryFormModal({ category, onClose, onSuccess }: Prop
             >
               {previewUrl ? (
                 <div className="relative w-full h-40 rounded-lg overflow-hidden border border-gray-200">
-                  <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                  <Image src={previewUrl} alt="Preview" fill className="object-cover" unoptimized />
                   <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity">
                     <span className="text-white text-sm font-medium">Click to change image</span>
                   </div>
