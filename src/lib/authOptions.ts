@@ -4,7 +4,7 @@ import { comparePassword } from './hashPassword';
 import prisma from './prisma';
 
 export const authOptions: NextAuthOptions = {
-	// Configure one or more authentication providers
+	secret: process.env.NEXTAUTH_SECRET,
 	providers: [
 		CredentialsProvider({
 			name: 'Credentials',
@@ -13,46 +13,44 @@ export const authOptions: NextAuthOptions = {
 				password: { label: 'Password', type: 'password' },
 			},
 			async authorize(credentials) {
-				console.log('Login attempt for username:', credentials?.username);
-				if (!credentials?.username || !credentials?.password) {
-					throw new Error('Please enter your username and password');
+				try {
+					if (!credentials?.username || !credentials?.password) {
+						return null;
+					}
+
+					const admin = await prisma.admin.findUnique({
+						where: {
+							username: credentials.username,
+						},
+					});
+
+					if (!admin?.password) {
+						return null;
+					}
+
+					const validatePassword = await comparePassword(
+						credentials.password,
+						admin.password
+					);
+
+					if (!validatePassword) {
+						return null;
+					}
+
+					return {
+						id: admin.id.toString(),
+						name: admin.username,
+					};
+				} catch (error) {
+					console.error('Login authorize error:', error);
+					return null;
 				}
-
-				const admin = await prisma.admin.findUnique({
-					where: {
-						username: credentials.username,
-					},
-				});
-
-				console.log('Admin found:', !!admin);
-				if (!admin) {
-					throw new Error('Admin not found');
-				}
-
-				if (!admin.password) {
-					throw new Error('Admin password is missing');
-				}
-
-				const validatePassword = await comparePassword(
-					credentials.password,
-					admin.password
-				);
-				console.log('Password validation result:', validatePassword);
-
-				if (!validatePassword) {
-					throw new Error('Invalid password');
-				}
-
-				return {
-					id: admin.id.toString(),
-					name: admin.username,
-				};
 			},
 		}),
 	],
 	session: {
 		strategy: 'jwt',
-		maxAge: 30 * 24 * 60 * 60, // 30 days
+		maxAge: 30 * 24 * 60 * 60,
 	},
 	pages: {
 		signIn: '/signin',

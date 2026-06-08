@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { signIn } from 'next-auth/react';
+import { getSession, signIn } from 'next-auth/react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -18,7 +18,6 @@ import {
 	FormLabel,
 	FormMessage,
 } from '@/components/ui/form';
-import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 
 const FormSchema = z.object({
@@ -42,15 +41,13 @@ const InputForm = () => {
 	const [showPassword, setShowPassword] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
-	const router = useRouter();
 	const { status } = useSession();
 
-	// Redirect to dashboard if already logged in
 	useEffect(() => {
 		if (status === 'authenticated') {
-			router.push('/user-management');
+			window.location.assign('/user-management');
 		}
-	}, [status, router]);
+	}, [status]);
 
 	async function onSubmit(values: z.infer<typeof FormSchema>) {
 		try {
@@ -63,26 +60,37 @@ const InputForm = () => {
 			});
 
 			if (!response?.ok) {
-				setIsLoading(false);
 				const errorMsg = response?.error || 'Incorrect username or password';
 				setErrorMessage(errorMsg);
-				toast.error(errorMsg, {
-					className: 'm-6',
-				});
+				toast.error(errorMsg, { className: 'm-6' });
 				return;
 			}
+
+			await getSession();
 			toast.success(`Welcome ${values.username}!`, { className: 'm-6' });
-			router.push('/user-management');
-			setIsLoading(false);
+			window.location.assign('/user-management');
 		} catch (error) {
-			console.log(error);
+			console.error(error);
 			setErrorMessage('An unexpected error occurred. Please try again.');
+		} finally {
 			setIsLoading(false);
 		}
 	}
 
-	if (status === 'loading' || status === 'authenticated') {
-		return <div className="flex h-screen items-center justify-center">Loading...</div>;
+	if (status === 'loading') {
+		return (
+			<div className="flex h-screen items-center justify-center bg-[#006d44] text-white">
+				Loading...
+			</div>
+		);
+	}
+
+	if (status === 'authenticated') {
+		return (
+			<div className="flex h-screen items-center justify-center bg-[#006d44] text-white">
+				Redirecting...
+			</div>
+		);
 	}
 
 	return (
