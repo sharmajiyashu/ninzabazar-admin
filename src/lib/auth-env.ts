@@ -1,4 +1,8 @@
+import type { NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
+
 export const AUTH_HOME_PATH = '/';
+export const AUTH_SIGNIN_PATH = '/signin';
 
 type RequestWithHeaders = {
   headers: {
@@ -10,17 +14,6 @@ type RequestWithHeaders = {
   };
 };
 
-export function isSecureRequest(request: RequestWithHeaders): boolean {
-  return (
-    request.nextUrl?.protocol === 'https:' ||
-    request.headers.get('x-forwarded-proto') === 'https'
-  );
-}
-
-/**
- * Resolve the app URL from the current request (host + port + protocol).
- * No hardcoded localhost URL — works on any port and Vercel domain.
- */
 export function resolveAuthUrl(request?: RequestWithHeaders): string {
   if (request?.nextUrl?.origin) {
     return request.nextUrl.origin;
@@ -45,12 +38,36 @@ export function resolveAuthUrl(request?: RequestWithHeaders): string {
   }
 
   const port = process.env.PORT ?? '3000';
-  return `http://127.0.0.1:${port}`;
+  return `http://localhost:${port}`;
 }
 
-/** Set NEXTAUTH_URL for this request so NextAuth uses the current URL/port. */
+/** Set NEXTAUTH_URL for auth API handlers (cookie creation). */
 export function applyAuthUrlFromRequest(request?: RequestWithHeaders) {
   const url = resolveAuthUrl(request);
   process.env.NEXTAUTH_URL = url;
   process.env.AUTH_URL = url;
+}
+
+/**
+ * Read session JWT from request cookies.
+ * Tries both secure and non-secure cookie names to avoid redirect loops.
+ */
+export async function getAuthToken(request: NextRequest) {
+  const secret = process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET;
+  if (!secret) {
+    return null;
+  }
+
+  for (const secureCookie of [true, false]) {
+    const token = await getToken({
+      req: request,
+      secret,
+      secureCookie,
+    });
+    if (token) {
+      return token;
+    }
+  }
+
+  return null;
 }

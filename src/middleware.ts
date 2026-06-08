@@ -1,83 +1,50 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getToken } from 'next-auth/jwt';
 import {
 	AUTH_HOME_PATH,
-	applyAuthUrlFromRequest,
-	isSecureRequest,
+	AUTH_SIGNIN_PATH,
+	getAuthToken,
 } from '@/lib/auth-env';
 
-export async function middleware(request: NextRequest) {
-	applyAuthUrlFromRequest(request);
-	const pathname = request.nextUrl.pathname;
+const PROTECTED_PATHS = [
+	'/',
+	'/user-management',
+	'/product-approval',
+	'/store-approval',
+	'/store-registration',
+	'/escrow-management',
+	'/order-disputes',
+	'/landing-page-management',
+	'/product-settings-management',
+	'/category-management',
+	'/customer-queries',
+];
 
-	console.log('Middleware running for:', pathname);
-
-	const token = await getToken({
-		req: request,
-		secret: process.env.NEXTAUTH_SECRET,
-		secureCookie: isSecureRequest(request),
-	});
-
-	console.log('Token found:', !!token);
-	console.log(
-		'Token details:',
-		token ? { email: token.email, role: token.role } : 'No token'
+function isProtectedPath(pathname: string) {
+	return PROTECTED_PATHS.some(
+		(path) => pathname === path || pathname.startsWith(`${path}/`)
 	);
+}
 
-	// define paths
-	const home = '/';
-	const signIn = '/signin';
-	const userManagement = '/user-management';
-	const productApproval = '/product-approval';
-	const storeApproval = '/store-approval';
-	const storeRegistration = '/store-registration';
-	const escrowManagement = '/escrow-management';
-	const orderDisputes = '/order-disputes';
-	const landingPageManagement = '/landing-page-management';
-	const productSettingsManagement = '/product-settings-management';
+export async function middleware(request: NextRequest) {
+	const { pathname } = request.nextUrl;
+	const token = await getAuthToken(request);
 
-	const protectedRoutes = [
-		home,
-		userManagement,
-		productApproval,
-		storeApproval,
-		storeRegistration,
-		escrowManagement,
-		orderDisputes,
-		landingPageManagement,
-		productSettingsManagement,
-	];
-
-	console.log('Is protected route:', protectedRoutes.includes(pathname));
-
-	// Redirect to login if not authenticated and trying to access protected route
-	if (!token && protectedRoutes.includes(pathname)) {
-		console.log('Redirecting to login - no token');
-		return NextResponse.redirect(new URL(signIn, request.url));
+	if (!token && isProtectedPath(pathname)) {
+		const signInUrl = new URL(AUTH_SIGNIN_PATH, request.url);
+		signInUrl.searchParams.set('callbackUrl', pathname);
+		return NextResponse.redirect(signInUrl);
 	}
 
-	// Redirect to home if already authenticated and trying to access login
-	if (token && pathname === signIn) {
-		console.log('Redirecting to home - already logged in');
+	if (token && pathname === AUTH_SIGNIN_PATH) {
 		return NextResponse.redirect(new URL(AUTH_HOME_PATH, request.url));
 	}
 
-	console.log('Allowing request to continue');
 	return NextResponse.next();
 }
 
 export const config = {
 	matcher: [
-		'/',
-		'/user-management/:path*',
-		'/product-approval/:path*',
-		'/store-approval/:path*',
-		'/store-registration/:path*',
-		'/escrow-management/:path*',
-		'/order-disputes/:path*',
-		'/landing-page-management/:path*',
-		'/product-settings-management/:path*',
-		'/signin',
+		'/((?!api|_next/static|_next/image|favicon.ico|img|.*\\..*).*)',
 	],
 };

@@ -1,13 +1,14 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { signIn, useSession } from 'next-auth/react';
+import { signIn } from 'next-auth/react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { toast } from 'sonner';
+import { useSearchParams } from 'next/navigation';
 import { AUTH_HOME_PATH } from '@/lib/auth-env';
 
 import {
@@ -29,7 +30,10 @@ const FormSchema = z.object({
 	}),
 });
 
-const InputForm = () => {
+function SignInForm() {
+	const searchParams = useSearchParams();
+	const callbackUrl = searchParams.get('callbackUrl') || AUTH_HOME_PATH;
+
 	const form = useForm<z.infer<typeof FormSchema>>({
 		resolver: zodResolver(FormSchema),
 		defaultValues: {
@@ -41,13 +45,6 @@ const InputForm = () => {
 	const [showPassword, setShowPassword] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
-	const { status } = useSession();
-
-	useEffect(() => {
-		if (status === 'authenticated') {
-			window.location.replace(AUTH_HOME_PATH);
-		}
-	}, [status]);
 
 	async function onSubmit(values: z.infer<typeof FormSchema>) {
 		setIsLoading(true);
@@ -56,7 +53,7 @@ const InputForm = () => {
 		try {
 			const response = await signIn('credentials', {
 				redirect: false,
-				callbackUrl: AUTH_HOME_PATH,
+				callbackUrl,
 				username: values.username,
 				password: values.password,
 			});
@@ -69,29 +66,13 @@ const InputForm = () => {
 			}
 
 			toast.success(`Welcome ${values.username}!`, { className: 'm-6' });
-			window.location.replace(AUTH_HOME_PATH);
+			window.location.assign(callbackUrl.startsWith('/') ? callbackUrl : AUTH_HOME_PATH);
 		} catch (error) {
 			console.error(error);
 			setErrorMessage('An unexpected error occurred. Please try again.');
 		} finally {
 			setIsLoading(false);
 		}
-	}
-
-	if (status === 'loading') {
-		return (
-			<div className="flex h-screen items-center justify-center bg-[#006d44] text-white">
-				Loading...
-			</div>
-		);
-	}
-
-	if (status === 'authenticated') {
-		return (
-			<div className="flex h-screen items-center justify-center bg-[#006d44] text-white">
-				Redirecting...
-			</div>
-		);
 	}
 
 	return (
@@ -210,6 +191,18 @@ const InputForm = () => {
 			</div>
 		</div>
 	);
-};
+}
 
-export default InputForm;
+export default function SignInPage() {
+	return (
+		<Suspense
+			fallback={
+				<div className="flex h-screen items-center justify-center bg-[#006d44] text-white">
+					Loading...
+				</div>
+			}
+		>
+			<SignInForm />
+		</Suspense>
+	);
+}
