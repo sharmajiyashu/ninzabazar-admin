@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import { applyAuthUrlFromRequest } from '@/lib/auth-env';
+import {
+	AUTH_HOME_PATH,
+	applyAuthUrlFromRequest,
+	isSecureRequest,
+} from '@/lib/auth-env';
 
 export async function middleware(request: NextRequest) {
 	applyAuthUrlFromRequest(request);
@@ -12,6 +16,7 @@ export async function middleware(request: NextRequest) {
 	const token = await getToken({
 		req: request,
 		secret: process.env.NEXTAUTH_SECRET,
+		secureCookie: isSecureRequest(request),
 	});
 
 	console.log('Token found:', !!token);
@@ -52,10 +57,10 @@ export async function middleware(request: NextRequest) {
 		return NextResponse.redirect(new URL(signIn, request.url));
 	}
 
-	// Redirect to user management if already authenticated and trying to access login
+	// Redirect to home if already authenticated and trying to access login
 	if (token && pathname === signIn) {
-		console.log('Redirecting to user management - already logged in');
-		return NextResponse.redirect(new URL(userManagement, request.url));
+		console.log('Redirecting to home - already logged in');
+		return NextResponse.redirect(new URL(AUTH_HOME_PATH, request.url));
 	}
 
 	console.log('Allowing request to continue');

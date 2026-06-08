@@ -1,5 +1,6 @@
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import { AUTH_HOME_PATH } from './auth-env';
 import { comparePassword } from './hashPassword';
 import prisma from './prisma';
 
@@ -56,6 +57,15 @@ export const authOptions: NextAuthOptions = {
 		signIn: '/signin',
 	},
 	callbacks: {
+		async redirect({ url, baseUrl }) {
+			if (url.startsWith('/')) {
+				return `${baseUrl}${url}`;
+			}
+			if (url.startsWith(baseUrl)) {
+				return url;
+			}
+			return `${baseUrl}${AUTH_HOME_PATH}`;
+		},
 		jwt: async ({ token, user }) => {
 			if (user) {
 				token.id = (user as { id?: string }).id || token.id;

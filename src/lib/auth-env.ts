@@ -1,11 +1,21 @@
+export const AUTH_HOME_PATH = '/';
+
 type RequestWithHeaders = {
   headers: {
     get(name: string): string | null;
   };
   nextUrl?: {
     origin: string;
+    protocol?: string;
   };
 };
+
+export function isSecureRequest(request: RequestWithHeaders): boolean {
+  return (
+    request.nextUrl?.protocol === 'https:' ||
+    request.headers.get('x-forwarded-proto') === 'https'
+  );
+}
 
 /**
  * Resolve the app URL from the current request (host + port + protocol).

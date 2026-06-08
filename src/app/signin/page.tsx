@@ -3,12 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { getSession, signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { useSession } from 'next-auth/react';
+import { AUTH_HOME_PATH } from '@/lib/auth-env';
 
 import {
 	Form,
@@ -45,30 +45,31 @@ const InputForm = () => {
 
 	useEffect(() => {
 		if (status === 'authenticated') {
-			window.location.assign('/user-management');
+			window.location.replace(AUTH_HOME_PATH);
 		}
 	}, [status]);
 
 	async function onSubmit(values: z.infer<typeof FormSchema>) {
+		setIsLoading(true);
+		setErrorMessage(null);
+
 		try {
-			setIsLoading(true);
-			setErrorMessage(null);
 			const response = await signIn('credentials', {
 				redirect: false,
+				callbackUrl: AUTH_HOME_PATH,
 				username: values.username,
 				password: values.password,
 			});
 
 			if (!response?.ok) {
-				const errorMsg = response?.error || 'Incorrect username or password';
+				const errorMsg = 'Incorrect username or password';
 				setErrorMessage(errorMsg);
 				toast.error(errorMsg, { className: 'm-6' });
 				return;
 			}
 
-			await getSession();
 			toast.success(`Welcome ${values.username}!`, { className: 'm-6' });
-			window.location.assign('/user-management');
+			window.location.replace(AUTH_HOME_PATH);
 		} catch (error) {
 			console.error(error);
 			setErrorMessage('An unexpected error occurred. Please try again.');
@@ -106,7 +107,6 @@ const InputForm = () => {
 				}
 			`}} />
 
-			{/* Left Side: 3D Illustration (Hidden on mobile) */}
 			<div className="hidden md:flex md:w-1/2 flex-col items-center justify-center p-12 relative z-10 select-none">
 				<div className="animate-float relative w-full max-w-lg aspect-square flex items-center justify-center">
 					<Image
@@ -120,15 +120,12 @@ const InputForm = () => {
 				</div>
 			</div>
 
-			{/* Right Side: Login Card & Branding */}
 			<div className="w-full md:w-1/2 flex flex-col items-center justify-center p-6 md:p-12 relative z-10 min-h-screen md:min-h-0">
 				<div className="w-full max-w-md flex flex-col items-center">
-					{/* Logo / Branding */}
 					<h1 className="text-4xl md:text-5xl font-black text-white mb-6 tracking-wide drop-shadow-sm select-none">
 						Ninja Bazaar
 					</h1>
 
-					{/* White login card */}
 					<div className="w-full bg-white rounded-3xl p-8 md:p-10 shadow-2xl flex flex-col transition-all duration-300 hover:shadow-[0_20px_60px_rgba(0,0,0,0.25)] border border-white/10">
 						<div className="text-center mb-6">
 							<h2 className="text-2xl font-bold text-gray-900 mb-1">
@@ -208,8 +205,6 @@ const InputForm = () => {
 								)}
 							</form>
 						</Form>
-
-						{/* Links have been completely removed as requested */}
 					</div>
 				</div>
 			</div>
