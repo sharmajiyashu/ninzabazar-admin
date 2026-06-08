@@ -1,5 +1,5 @@
 'use client';
-import React, { Suspense, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
@@ -8,7 +8,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { useSearchParams } from 'next/navigation';
 import { AUTH_HOME_PATH } from '@/lib/auth-env';
 
 import {
@@ -30,9 +29,11 @@ const FormSchema = z.object({
 	}),
 });
 
-function SignInForm() {
-	const searchParams = useSearchParams();
-	const callbackUrl = searchParams.get('callbackUrl') || AUTH_HOME_PATH;
+export default function SignInPage() {
+	const [callbackUrl, setCallbackUrl] = useState(AUTH_HOME_PATH);
+	const [showPassword, setShowPassword] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
+	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
 	const form = useForm<z.infer<typeof FormSchema>>({
 		resolver: zodResolver(FormSchema),
@@ -42,9 +43,13 @@ function SignInForm() {
 		},
 	});
 
-	const [showPassword, setShowPassword] = useState(false);
-	const [isLoading, setIsLoading] = useState(false);
-	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+	useEffect(() => {
+		const params = new URLSearchParams(window.location.search);
+		const next = params.get('callbackUrl');
+		if (next?.startsWith('/')) {
+			setCallbackUrl(next);
+		}
+	}, []);
 
 	async function onSubmit(values: z.infer<typeof FormSchema>) {
 		setIsLoading(true);
@@ -65,12 +70,11 @@ function SignInForm() {
 				return;
 			}
 
-			toast.success(`Welcome ${values.username}!`, { className: 'm-6' });
-			window.location.assign(callbackUrl.startsWith('/') ? callbackUrl : AUTH_HOME_PATH);
+			const destination = callbackUrl.startsWith('/') ? callbackUrl : AUTH_HOME_PATH;
+			window.location.href = destination;
 		} catch (error) {
 			console.error(error);
 			setErrorMessage('An unexpected error occurred. Please try again.');
-		} finally {
 			setIsLoading(false);
 		}
 	}
@@ -190,19 +194,5 @@ function SignInForm() {
 				</div>
 			</div>
 		</div>
-	);
-}
-
-export default function SignInPage() {
-	return (
-		<Suspense
-			fallback={
-				<div className="flex h-screen items-center justify-center bg-[#006d44] text-white">
-					Loading...
-				</div>
-			}
-		>
-			<SignInForm />
-		</Suspense>
 	);
 }

@@ -1,11 +1,13 @@
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { AUTH_HOME_PATH } from './auth-env';
+import { AUTH_HOME_PATH, initAuthEnv } from './auth-env';
 import { comparePassword } from './hashPassword';
 import prisma from './prisma';
 
+initAuthEnv();
+
 export const authOptions: NextAuthOptions = {
-	secret: process.env.NEXTAUTH_SECRET,
+	secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
 	providers: [
 		CredentialsProvider({
 			name: 'Credentials',

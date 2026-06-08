@@ -4,6 +4,9 @@ import { getToken } from 'next-auth/jwt';
 export const AUTH_HOME_PATH = '/';
 export const AUTH_SIGNIN_PATH = '/signin';
 
+/** Canonical production URL — used on Vercel when env vars are not set. */
+export const PRODUCTION_APP_URL = 'https://ninzabazar-admin.vercel.app';
+
 type RequestWithHeaders = {
   headers: {
     get(name: string): string | null;
@@ -14,6 +17,20 @@ type RequestWithHeaders = {
   };
 };
 
+export function isVercelDeployment() {
+  return process.env.VERCEL === '1';
+}
+
+export function getConfiguredAppUrl(): string | undefined {
+  const url = process.env.NEXTAUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL;
+  return url?.replace(/\/$/, '');
+}
+
+/**
+ * Resolve auth base URL:
+ * - Local dev: current request origin (any port)
+ * - Vercel/live: request origin, or configured env URL, or production fallback
+ */
 export function resolveAuthUrl(request?: RequestWithHeaders): string {
   if (request?.nextUrl?.origin) {
     return request.nextUrl.origin;
@@ -33,28 +50,40 @@ export function resolveAuthUrl(request?: RequestWithHeaders): string {
     }
   }
 
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
+  if (isVercelDeployment()) {
+    return getConfiguredAppUrl() ?? PRODUCTION_APP_URL;
   }
 
   const port = process.env.PORT ?? '3000';
   return `http://localhost:${port}`;
 }
 
-/** Set NEXTAUTH_URL for auth API handlers (cookie creation). */
+/** Set NEXTAUTH_URL before NextAuth runs (required for cookies on HTTPS). */
 export function applyAuthUrlFromRequest(request?: RequestWithHeaders) {
   const url = resolveAuthUrl(request);
   process.env.NEXTAUTH_URL = url;
   process.env.AUTH_URL = url;
 }
 
+/** Initialize auth env on server startup (Vercel cold starts). */
+export function initAuthEnv() {
+  if (isVercelDeployment()) {
+    const url = getConfiguredAppUrl() ?? PRODUCTION_APP_URL;
+    process.env.NEXTAUTH_URL = url;
+    process.env.AUTH_URL = url;
+  }
+}
+
 /**
- * Read session JWT from request cookies.
- * Tries both secure and non-secure cookie names to avoid redirect loops.
+ * Read session JWT from cookies.
+ * Tries both secure and non-secure cookie names (HTTP local vs HTTPS Vercel).
  */
 export async function getAuthToken(request: NextRequest) {
+  applyAuthUrlFromRequest(request);
+
   const secret = process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET;
   if (!secret) {
+    console.error('[auth] NEXTAUTH_SECRET is not set');
     return null;
   }
 
