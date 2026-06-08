@@ -221,19 +221,28 @@ model Product {
   keywords       String[]
   status         String           @default("pending")
   totalPurchases Int              @default(0)
-  category       String?
-  subCategory    String?
+  categoryId     String?
+  subCategoryId  String?
+  brandId        String?
+  minOrderQuantity Int?
   CartItem       CartItem[]
   Conversation   Conversation[]
   OrderItem      OrderItem[]
   SellerProfile  SellerProfile    @relation(fields: [sellerId], references: [id])
+  Category       Category?        @relation(fields: [categoryId], references: [id])
+  SubCategory    SubCategory?     @relation(fields: [subCategoryId], references: [id])
+  Brand          Brand?           @relation(fields: [brandId], references: [id])
   ProductImage   ProductImage[]
   ProductVariant ProductVariant[]
   Review         Review[]
   ShippingMethod ShippingMethod[]
+  LandingProductSlot LandingProductSlot[]
+  ProductOnColor ProductOnColor[]
+  ProductOnMaterial ProductOnMaterial[]
 
   @@index([name])
   @@index([sellerId])
+  @@index([brandId])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -584,6 +593,8 @@ model Category {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   subCategories SubCategory[]
+  Product       Product[]
+  LandingCategorySlot LandingCategorySlot[]
 }
 
 model SubCategory {
@@ -595,8 +606,137 @@ model SubCategory {
   isActive    Boolean  @default(true)
   categoryId  String
   category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  Product     Product[]
+  Brand       Brand[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([categoryId])
+}
+
+model LandingSection {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  title     String
+  subtitle  String?
+  isVisible Boolean  @default(true)
+  sortOrder Int      @default(0)
+  config    Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LandingDeal {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  imageUrl    String
+  bgColor     String   @default("#0a8558")
+  linkUrl     String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model LandingCategorySlot {
+  id         String   @id @default(uuid())
+  categoryId String
+  slotType   String
+  sortOrder  Int      @default(0)
+  isActive   Boolean  @default(true)
+  Category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([categoryId, slotType])
+  @@index([slotType, sortOrder])
+}
+
+model LandingProductSlot {
+  id         String   @id @default(uuid())
+  productId  String
+  sectionKey String
+  sortOrder  Int      @default(0)
+  isActive   Boolean  @default(true)
+  Product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([productId, sectionKey])
+  @@index([sectionKey, sortOrder])
+}
+
+model Brand {
+  id            String      @id @default(uuid())
+  name          String
+  subCategoryId String
+  isActive      Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  SubCategory   SubCategory @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
+  Product       Product[]
+
+  @@unique([name, subCategoryId])
+  @@index([subCategoryId])
+}
+
+model ProductColor {
+  id             String           @id @default(uuid())
+  name           String           @unique
+  hexCode        String?
+  isActive       Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  ProductOnColor ProductOnColor[]
+}
+
+model ProductMaterial {
+  id                String              @id @default(uuid())
+  name              String              @unique
+  isActive          Boolean             @default(true)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  ProductOnMaterial ProductOnMaterial[]
+}
+
+model ProductOnColor {
+  productId    String
+  colorId      String
+  Product      Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  ProductColor ProductColor @relation(fields: [colorId], references: [id], onDelete: Cascade)
+
+  @@id([productId, colorId])
+  @@index([colorId])
+}
+
+model ProductOnMaterial {
+  productId       String
+  materialId      String
+  Product         Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  ProductMaterial ProductMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@id([productId, materialId])
+  @@index([materialId])
+}
+
+model CustomerQuery {
+  id          String   @id @default(cuid())
+  firstName   String   @default("")
+  phoneNumber String
+  queryText   String   @map("query")
+  status      String   @default("PENDING")
+  adminNotes  String?
+  source      String   @default("LANDING")
+  productId   String?
+  productName String?
+  sellerId    String?
+  quantity    Int?
+  color       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([source])
+  @@index([createdAt])
 }

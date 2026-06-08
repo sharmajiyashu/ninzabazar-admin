@@ -28,6 +28,8 @@ export async function middleware(request: NextRequest) {
 	const storeRegistration = '/store-registration';
 	const escrowManagement = '/escrow-management';
 	const orderDisputes = '/order-disputes';
+	const landingPageManagement = '/landing-page-management';
+	const productSettingsManagement = '/product-settings-management';
 
 	const protectedRoutes = [
 		home,
@@ -37,6 +39,8 @@ export async function middleware(request: NextRequest) {
 		storeRegistration,
 		escrowManagement,
 		orderDisputes,
+		landingPageManagement,
+		productSettingsManagement,
 	];
 
 	console.log('Is protected route:', protectedRoutes.includes(pathname));
@@ -66,6 +70,8 @@ export const config = {
 		'/store-registration/:path*',
 		'/escrow-management/:path*',
 		'/order-disputes/:path*',
+		'/landing-page-management/:path*',
+		'/product-settings-management/:path*',
 		'/signin',
 	],
 };

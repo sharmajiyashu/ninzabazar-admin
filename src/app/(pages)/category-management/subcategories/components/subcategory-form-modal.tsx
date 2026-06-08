@@ -63,11 +63,15 @@ export default function SubCategoryFormModal({ subcategory, categories, onClose,
 
       if (subcategory) {
         await axios.put(`/api/subcategories/${subcategory.id}`, formData);
+        onSuccess();
       } else {
-        await axios.post('/api/subcategories', formData);
+        const res = await axios.post('/api/subcategories', formData);
+        const productsUrl = res.data?.productsUrl as string | undefined;
+        onSuccess();
+        if (productsUrl) {
+          window.open(productsUrl, '_blank');
+        }
       }
-      
-      onSuccess();
     } catch (err: any) {
       console.error('Error saving subcategory:', err);
       setError(err.response?.data?.error || 'Failed to save subcategory');

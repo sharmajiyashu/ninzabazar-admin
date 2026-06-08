@@ -81,9 +81,15 @@ export async function POST(request: NextRequest) {
         isActive,
         imageUrl,
       },
+      include: {
+        category: { select: { id: true, name: true } },
+      },
     });
 
-    return NextResponse.json(newSubCategory, { status: 201 });
+    const websiteBase = process.env.NEXT_PUBLIC_WEBSITE_URL || 'http://localhost:3000';
+    const productsUrl = `${websiteBase}/products?category=${encodeURIComponent(newSubCategory.category.name)}&subCategory=${encodeURIComponent(newSubCategory.name)}`;
+
+    return NextResponse.json({ ...newSubCategory, productsUrl }, { status: 201 });
   } catch (error) {
     console.error('Error creating subcategory:', error);
     return NextResponse.json({ error: 'Failed to create subcategory' }, { status: 500 });

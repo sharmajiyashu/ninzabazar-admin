@@ -20,6 +20,7 @@ interface Product {
 	seller: string;
 	storeName: string;
 	category: string;
+	subCategory: string;
 	price: number;
 	salePrice: number | null;
 	status: 'under review' | 'approved' | 'rejected';
@@ -232,6 +233,11 @@ export default function ProductApprovalPage() {
 	const [globalFilter, setGlobalFilter] = useState<string>('');
 	const [categoryFilter, setCategoryFilter] = useState<string>('');
 	const [statusFilter, setStatusFilter] = useState<string>('');
+	
+	const [pagination, setPagination] = useState({
+		pageIndex: 0,
+		pageSize: 10,
+	});
 
 	// Debounced search value with longer delay to reduce lag
 	const debouncedSearchTerm = useDebounce(globalFilter, 500);
@@ -314,11 +320,21 @@ export default function ProductApprovalPage() {
 		{
 			header: 'Category',
 			accessorKey: 'category',
-			cell: (info) => (
-				<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-					{info.getValue<string>()}
-				</span>
-			),
+			cell: ({ row }) => {
+				const product = row.original;
+				return (
+					<div className="flex flex-col space-y-1">
+						<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 w-fit">
+							{product.category}
+						</span>
+						{product.subCategory && product.subCategory !== 'N/A' && (
+							<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 w-fit">
+								{product.subCategory}
+							</span>
+						)}
+					</div>
+				);
+			},
 		},
 		{
 			header: 'Price',
@@ -427,11 +443,10 @@ export default function ProductApprovalPage() {
 		getCoreRowModel: getCoreRowModel(),
 		getPaginationRowModel: getPaginationRowModel(),
 		getFilteredRowModel: getFilteredRowModel(),
-		initialState: {
-			pagination: {
-				pageSize: 10,
-			},
+		state: {
+			pagination,
 		},
+		onPaginationChange: setPagination,
 	});
 
 	const clearFilters = () => {
@@ -548,9 +563,9 @@ export default function ProductApprovalPage() {
 					</div>
 
 					{/* Table */}
-					<div className="overflow-x-auto">
+					<div className="overflow-x-auto overflow-y-auto max-h-[65vh]">
 						<table className="min-w-full divide-y divide-gray-200">
-							<thead className="bg-gray-50 border-b border-gray-200">
+							<thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
 								{table.getHeaderGroups().map((headerGroup) => (
 									<tr key={headerGroup.id}>
 										{headerGroup.headers.map((header) => (

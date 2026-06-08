@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { resolveReviewStatus } from '@/lib/product-status';
 
 export async function GET() {
 	try {
@@ -21,54 +22,67 @@ export async function GET() {
 						},
 					},
 				},
+				Category: true,
+				SubCategory: true,
 			},
 		});
 
 		// Format data for frontend display
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const formattedProducts = products.map((product: any) => ({
-			id: product.id,
-			productName: product.name,
-			description: product.description,
-			sellerId: product.sellerId,
-			seller: `${product.SellerProfile.User.firstName} ${product.SellerProfile.User.lastName}`,
-			storeName:
-				product.SellerProfile.shopName ||
-				product.SellerProfile.businessRegisteredName,
-			category: product.category || 'Uncategorized',
-			price: parseFloat(product.basePrice.toString()),
-			salePrice: product.salePrice
-				? parseFloat(product.salePrice.toString())
-				: null,
-			isSale: product.isSale,
-			createdAt: product.createdAt,
-			updatedAt: product.updatedAt,
-			status: product.adminApproved ? 'approved' : 'under review',
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			images: product.ProductImage.map((img: any) => ({
-				id: img.id,
-				url: img.urlpath,
-				alt: img.alt || product.name,
-				isDefault: img.isDefault,
-			})),
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			variants: product.ProductVariant.map((variant: any) => ({
-				id: variant.id,
-				title: variant.title,
-				option: variant.option,
-				price: parseFloat(variant.price.toString()),
-				sku: variant.sku,
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				images: variant.ProductVariantImage.map((img: any) => ({
+		const formattedProducts = products.map((product: any) => {
+			const reviewStatus = resolveReviewStatus(product.status, product.adminApproved);
+			const statusLabel =
+				reviewStatus === 'approved'
+					? 'approved'
+					: reviewStatus === 'rejected'
+						? 'rejected'
+						: 'under review';
+
+			return {
+				id: product.id,
+				productName: product.name,
+				description: product.description,
+				sellerId: product.sellerId,
+				seller: product.SellerProfile && product.SellerProfile.User
+					? `${product.SellerProfile.User.firstName} ${product.SellerProfile.User.lastName}`
+					: 'N/A',
+				storeName: product.SellerProfile
+					? (product.SellerProfile.shopName || product.SellerProfile.businessRegisteredName || product.SellerProfile.companyName || 'N/A')
+					: 'N/A',
+				category: product.Category?.name || 'Uncategorized',
+				subCategory: product.SubCategory?.name || 'N/A',
+				price: parseFloat(product.basePrice?.toString() || '0'),
+				salePrice: product.salePrice
+					? parseFloat(product.salePrice.toString())
+					: null,
+				isSale: product.isSale,
+				createdAt: product.createdAt,
+				updatedAt: product.updatedAt,
+				status: statusLabel,
+				adminApproved: product.adminApproved,
+				isActive: product.isActive,
+				images: product.ProductImage.map((img: any) => ({
 					id: img.id,
 					url: img.urlpath,
-					alt:
-						img.alt || `${product.name} - ${variant.title} - ${variant.option}`,
+					alt: img.alt || product.name,
 					isDefault: img.isDefault,
 				})),
-			})),
-		}));
-
+				variants: product.ProductVariant.map((variant: any) => ({
+					id: variant.id,
+					title: variant.title,
+					option: variant.option,
+					price: parseFloat(variant.price.toString()),
+					sku: variant.sku,
+					images: variant.ProductVariantImage.map((img: any) => ({
+						id: img.id,
+						url: img.urlpath,
+						alt:
+							img.alt || `${product.name} - ${variant.title} - ${variant.option}`,
+						isDefault: img.isDefault,
+					})),
+				})),
+			};
+		});
 		return NextResponse.json(formattedProducts);
 	} catch (error) {
 		console.error('Error fetching products:', error);
