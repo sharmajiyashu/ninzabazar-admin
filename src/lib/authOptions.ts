@@ -1,6 +1,7 @@
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { ROUTES } from '@/constants/routes';
+import { getAppOrigin } from '@/constants/app';
 import { getSessionCookieOptions } from '@/lib/auth-session';
 import { comparePassword } from './hashPassword';
 import prisma from './prisma';
@@ -72,7 +73,7 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async redirect({ url, baseUrl }) {
-      const origin = baseUrl || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+      const origin = baseUrl || getAppOrigin();
 
       if (url.startsWith('/')) {
         return `${origin}${url}`;

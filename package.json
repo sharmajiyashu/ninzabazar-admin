@@ -3,11 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 6001",
     "prebuild": "node ./scripts/clean-next.mjs",
     "postinstall": "prisma generate",
     "build": "prisma generate && next build",
-    "start": "next start",
+    "start": "next start -p 6001",
+    "pm2:start": "pm2 start ecosystem.config.cjs --env production",
+    "pm2:stop": "pm2 stop ninzabazar-admin",
+    "pm2:restart": "pm2 restart ninzabazar-admin",
+    "pm2:logs": "pm2 logs ninzabazar-admin",
+    "pm2:delete": "pm2 delete ninzabazar-admin",
     "lint": "next lint",
     "generate": "prisma generate",
     "seed:admin": "tsx src/scripts/seedAdmin.ts"
