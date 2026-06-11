@@ -1,5 +1,5 @@
 /** Default app port for local and server runs. Override with PORT in .env */
-export const APP_PORT = Number(process.env.PORT ?? 6001);
+export const APP_PORT = Number(process.env.PORT ?? 6500);
 
 export const APP_HOST = process.env.APP_HOST ?? 'localhost';
 

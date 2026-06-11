@@ -5,7 +5,7 @@ module.exports = {
       name: 'ninzabazar-admin',
       cwd: __dirname,
       script: 'node_modules/next/dist/bin/next',
-      args: 'start -p 6001',
+      args: 'start -p 6500',
       instances: 1,
       exec_mode: 'fork',
       autorestart: true,
@@ -13,11 +13,11 @@ module.exports = {
       max_memory_restart: '512M',
       env: {
         NODE_ENV: 'production',
-        PORT: 6001,
+        PORT: 6500,
       },
       env_production: {
         NODE_ENV: 'production',
-        PORT: 6001,
+        PORT: 6500,
       },
       error_file: './logs/pm2-error.log',
       out_file: './logs/pm2-out.log',
